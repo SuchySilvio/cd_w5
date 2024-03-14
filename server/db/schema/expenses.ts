@@ -1,6 +1,5 @@
 import { pgTable, text, varchar, timestamp, numeric, serial, date, } from "drizzle-orm/pg-core";
 
-
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
@@ -11,5 +10,3 @@ export const expenses = pgTable("expenses", {
     .notNull()
     .defaultNow(),
 });
-
-

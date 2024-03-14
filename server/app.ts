@@ -2,6 +2,10 @@ import { Hono } from "hono";
 import { logger } from 'hono/logger'
 import { fakeExpenses } from "./fakedb";
 import { serveStatic } from 'hono/bun'
+import { expenses as expensesTable } from "./db/schema/expenses";
+import { db } from "./db";
+import { desc, eq, sum } from "drizzle-orm"
+
 
 
 
@@ -9,23 +13,40 @@ const app = new Hono();
 
 app.use("*", logger());
 
+type Expense = {
+  id: number;
+  title: string;
+  amount: string;
+  date: string;
+}
 
 
 export const expensesRoute = new Hono()
   .get("/", async (c) => {
-    return c.json({ expenses: fakeExpenses });
+    const expenses = await db.select().from(expensesTable);
+    return c.json({ expenses });
   })
   .post("/", async (c) => {
-    const expense = await c.req.json();   
-    expense.id = fakeExpenses.length + 1; 
-    fakeExpenses.push(expense);
+    const userId = "fake-user-id"
+    const expense: Expense = await c.req.json();
 
-    return c.json({ expense: expense }, 201);
+    const dbExpense = await db
+      .insert(expensesTable)
+      .values({...expense, userId })
+      .returning()
+      .then((rows) => rows[0]);
+
+    return c.json({ expense: dbExpense }, 201);
   })
   .get("/total-amount", async (c) => {
-    const total = fakeExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-    return c.json({ total: total });
+    const result = await db
+      .select({ total: sum(expensesTable.amount) })
+      .from(expensesTable)
+      .limit(1)
+      .then((r) => r[0]);
+    return c.json({ total: result.total });
   })
+
   .get("/:id{[0-9]+}", async (c) => {
     const id = Number.parseInt(c.req.param("id"));
     const expense = fakeExpenses.find((e) => e.id === id);

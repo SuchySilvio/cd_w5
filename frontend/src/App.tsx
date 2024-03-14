@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
+
 type ExpenseTotal = {
   total: number;
 };
@@ -14,7 +15,7 @@ async function getTotalExpenses() {
 type Expense = {
   id: number;
   title: string;
-  amount: number;
+  amount: string;
   date: string;
 };
 
@@ -45,6 +46,8 @@ function App() {
 
   const submitExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log('submitting expense', title, amount, date);
+    
     await fetch('/api/expenses', {
       method: 'POST',
       headers: {
@@ -52,7 +55,7 @@ function App() {
       },
       body: JSON.stringify({
         title,
-        amount: Number(amount),
+        amount,
         date,
       }),
     });
